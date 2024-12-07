@@ -128,7 +128,7 @@ def next_turn(snake, food):
 
     if x == food.coordinates[0] and y == food.coordinates[1]:
         global score
-
+        snake_food.play()
         score += 50
         label.config(text="Score: {}".format(score))
         canvas.delete("food")
