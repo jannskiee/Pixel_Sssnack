@@ -2,12 +2,12 @@ import csv
 import os
 import random
 import time
+from tkinter import *
+
 import numpy as np
 import pandas as pd
 import pygame
-from tkinter import *
 from matplotlib import pyplot as plt
-
 
 GAME_WIDTH = 600
 GAME_HEIGHT = 600
@@ -68,32 +68,30 @@ def game_start():
     next_turn(snake, food)
     start = time.time()
     snake_song.set_volume(0.2)
+    player_name_entry.config(state=DISABLED)
 
 
 def show_leaderboard():
     leaderboard_window = Toplevel(window)
     leaderboard_window.title("Leaderboard")
-    leaderboard_window.geometry("780x350")  # Set the leaderboard window size to 600x670
+    leaderboard_window.geometry("780x350")
     leaderboard_window.resizable(False, False)
 
     leaderboard_frame = Frame(leaderboard_window, bg=BACKGROUND_COLOR)
     leaderboard_frame.pack(fill=BOTH, expand=True)
 
-    # Column headers
     headers = ["Date", "Player Name", "Score", "Food Eaten", "Game Duration", "Grid Size", "Collision", "Rank"]
     for col, header in enumerate(headers):
         Label(leaderboard_frame, text=header, font=("Fixedsys", 12), bg=BACKGROUND_COLOR, fg="white").grid(
             row=0, column=col, padx=5, pady=5
         )
 
-    # Read leaderboard data
-    if os.path.exists('game_data/leaderboard_dense_rank.csv'):
-        with open('game_data/leaderboard_dense_rank.csv', 'r') as file:
+    if os.path.exists('game_data_csv/leaderboard_dense_rank.csv'):
+        with open('game_data_csv/leaderboard_dense_rank.csv', 'r') as file:
             reader = csv.reader(file)
             data = list(reader)
 
-        # Display top 10 rows
-        for i, row in enumerate(data[1:11], start=1):  # Display top 10 rows
+        for i, row in enumerate(data[1:11], start=1):
             for col, value in enumerate(row):
                 Label(leaderboard_frame, text=value, font=("Fixedsys", 10), bg=BACKGROUND_COLOR, fg="white").grid(
                     row=i, column=col, padx=5, pady=5
@@ -132,7 +130,7 @@ def next_turn(snake, food):
         global score
 
         score += 50
-        label.config(text="Score: {}".format(score))  # Update score label
+        label.config(text="Score: {}".format(score))
         canvas.delete("food")
         food = Food()
     else:
@@ -200,9 +198,13 @@ def add_data():
     global score, collision, start
     end = time.time()
     time_length = end - start
+    player_name = player_name_entry.get()
+    if player_name == "Enter Player Name":
+        player_name = "Anonymous"
+
     game_data = {
         'Date': [pd.Timestamp("today").strftime('%Y/%m/%d %H:%M:%S')],
-        'Player Name': ['Player'],
+        'Player Name': [player_name],
         'Score': [score],
         'Food_Eaten': [score // 50],
         'Game_Duration': [f"{time_length:.1f}s"],
@@ -210,29 +212,25 @@ def add_data():
         'Collision': [collision],
     }
 
-    # Convert game data to a pandas DataFrame
     df = pd.DataFrame(game_data)
 
-    # Check if the CSV file exists, if not, write it with the header
-    if not os.path.exists('game_data/leaderboard.csv'):
-        df.to_csv('game_data/leaderboard.csv', index=False, header=True)  # Write header on first creation
+    if not os.path.exists('game_data_csv/leaderboard.csv'):
+        df.to_csv('game_data_csv/leaderboard.csv', index=False, header=True)
     else:
-        df.to_csv('game_data/leaderboard.csv', mode='a', header=False, index=False)  # Append data without header
+        df.to_csv('game_data_csv/leaderboard.csv', mode='a', header=False, index=False)
 
-    # Read the CSV into a DataFrame and rank scores
-    df_rank = pd.read_csv('game_data/leaderboard.csv')
+    df_rank = pd.read_csv('game_data_csv/leaderboard.csv')
     df_rank['Rank'] = df_rank['Score'].rank(ascending=False, method='dense').astype(int)
     df_rank = df_rank.sort_values(by='Score', ascending=False)
 
-    # Save the ranked DataFrame to a new CSV file
-    df_rank.to_csv('game_data/leaderboard_dense_rank.csv', index=False)
+    df_rank.to_csv('game_data_csv/leaderboard_dense_rank.csv', index=False)
 
 
 def game_over():
     canvas.delete("snake", "food", "grid")
     add_data()
 
-    df_file = pd.DataFrame(pd.read_csv('game_data/leaderboard.csv'))
+    df_file = pd.DataFrame(pd.read_csv('game_data_csv/leaderboard.csv'))
     score_array = df_file['Score'].values
     high_score = np.max(score_array)
     print(f"Score: {score_array}")
@@ -242,6 +240,19 @@ def game_over():
                        font=('Fixedsys', 70), text="GAME OVER", fill="red", tag="gameover")
     canvas.create_text(300, 375,
                        font=('Fixedsys', 20), text=f"HIGH SCORE: {high_score}", fill="red", tag="gameover")
+
+    data = pd.read_csv('game_data_csv/leaderboard.csv')
+
+    player_scores = data.groupby('Player Name')['Score'].sum().sort_values(ascending=False)
+
+    plt.figure(figsize=(12, 6))
+    player_scores.plot(kind='bar', color='skyblue')
+    plt.title('Player Scores', fontsize=16)
+    plt.xlabel('Player Name', fontsize=12)
+    plt.ylabel('Total Score', fontsize=12)
+    plt.xticks(rotation=45, ha='right')
+    plt.tight_layout()
+    plt.savefig('game_data_plot/player_scores.png')
 
 
 window = Tk()
@@ -265,13 +276,17 @@ menu_frame.pack()
 menu_background_label = Label(menu_frame, image=menu_background_image)
 menu_background_label.place(relwidth=1, relheight=1)
 
+player_name_entry = Entry(menu_frame, font=("Fixedsys", 24), width=20, bg="#333333", fg="white")
+player_name_entry.insert(0, "Enter Player Name")
+player_name_entry.place(relx=0.5, rely=0.50, anchor=CENTER)
+
 start_button = Button(menu_frame, text="Start", font=("Fixedsys", 24), command=game_start, width=12, bg="#77C914",
                       fg="white")
-start_button.place(relx=0.5, rely=0.50, anchor=CENTER)
+start_button.place(relx=0.5, rely=0.60, anchor=CENTER)
 
 leaderboard_button = Button(menu_frame, text="Leaderboard", font=("Fixedsys", 24), command=show_leaderboard, width=12,
                             bg="#FFB200", fg="white")
-leaderboard_button.place(relx=0.5, rely=0.65, anchor=CENTER)
+leaderboard_button.place(relx=0.5, rely=0.70, anchor=CENTER)
 
 quit_button = Button(menu_frame, text="Quit", font=("Fixedsys", 24), command=game_quit, width=12, bg="#FC5658",
                      fg="white")
