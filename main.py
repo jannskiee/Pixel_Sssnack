@@ -1,14 +1,23 @@
-import csv
-import os
-import random
-import time
-from tkinter import *
+# Pixel Sssnack
+# An Interactive Pixel Snake Game with a Dynamic Leaderboard System and
+# Performance Analytics through Data Visualization of Player Scores
+# GitHub Repository Link: https://github.com/jannskiee/Pixel_Sssnack
 
-import numpy as np
-import pandas as pd
-import pygame
-from matplotlib import pyplot as plt
+# Snake Game Reference:
+# [1] https://www.youtube.com/watch?v=bfRwxS5d0SI
 
+import csv  # Used for reading and writing CSV files
+import os  # Used to check if a file exists
+import random  # Used for randomizing food position
+import time  # Used for game duration
+from tkinter import *  # Used for GUI
+
+import numpy as np  # Used for finding the highest score
+import pandas as pd  # Used for storing game data and ranking
+import pygame  # Used for sound effects
+from matplotlib import pyplot as plt  # Used for data visualization of player scores
+
+# Constants for Game Settings and Visuals
 GAME_WIDTH = 600
 GAME_HEIGHT = 600
 SPEED = 150
@@ -19,9 +28,16 @@ HEAD_COLOR = "#00FF00"
 BODY_COLOR = "#00FF00"
 FOOD_COLOR = "#FF0000"
 BACKGROUND_COLOR = "#000000"
-GRID_COLOR = "#333333"
 
 
+# Snake Class to Represent the Snake's Body and Properties
+# Improved by ChatGPT
+# Reference:
+# [1] https://www.youtube.com/watch?v=bfRwxS5d0SI
+# [2] https://www.askpython.com/python-modules/tkinter/tkinter-create-oval
+# [3] https://www.geeksforgeeks.org/python-tkinter-canvas-widget
+# [4] https://www.geeksforgeeks.org/python-tkinter-create-different-shapes-using-canvas-class/
+# [5] https://www.tutorialspoint.com/python/tk_canvas.htm
 class Snake:
     def __init__(self):
         self.body_size = BODY_PARTS
@@ -39,6 +55,9 @@ class Snake:
             self.shapes.append(shape)
 
 
+# Food Class to Represent the Food Object and Properties
+# Reference:
+# [23] https://www.w3schools.com/python/module_random.asp
 class Food:
     def __init__(self):
         x = random.randint(0, (GAME_WIDTH / SPACE_SIZE) - 1) * SPACE_SIZE
@@ -53,6 +72,14 @@ class Food:
                            fill=FOOD_COLOR, tag="food")
 
 
+# Initialize the Game Settings and Start the Game
+# Improved by ChatGPT
+# Reference:
+# [7] https://stackoverflow.com/questions/63218147/how-to-create-tkinter-main-menu
+# [8] https://stackoverflow.com/questions/23690993/how-do-we-delete-a-shape-thats-already-been-created-in-tkinter-canvas
+# [17] https://stackoverflow.com/questions/70058132/how-do-i-make-a-timer-in-python
+# [18] https://www.geeksforgeeks.org/python-create-a-digital-clock-using-tkinter/
+# [22] https://python-forum.io/thread-29603.html
 def game_start():
     global direction, score, start
     direction = 'down'
@@ -63,7 +90,6 @@ def game_start():
 
     snake = Snake()
     food = Food()
-    draw_grid()
 
     next_turn(snake, food)
     start = time.time()
@@ -71,10 +97,14 @@ def game_start():
     player_name_entry.config(state=DISABLED)
 
 
+# Show the Leaderboard with the Top 10 Scores
+# Improved by ChatGPT
+# Reference:
+# [21] https://www.activestate.com/resources/quick-reads/how-to-display-data-in-a-table-using-tkinter/.
 def show_leaderboard():
     leaderboard_window = Toplevel(window)
     leaderboard_window.title("Leaderboard")
-    leaderboard_window.geometry("780x350")
+    leaderboard_window.geometry("850x370")
     leaderboard_window.resizable(False, False)
 
     leaderboard_frame = Frame(leaderboard_window, bg=BACKGROUND_COLOR)
@@ -98,18 +128,12 @@ def show_leaderboard():
                 )
 
 
+# Quit the Game
 def game_quit():
     window.quit()
 
 
-def draw_grid():
-    for x in range(0, GAME_WIDTH, SPACE_SIZE):
-        canvas.create_line(x, 0, x, GAME_HEIGHT, fill=GRID_COLOR, tag="grid")
-
-    for y in range(0, GAME_HEIGHT, SPACE_SIZE):
-        canvas.create_line(0, y, GAME_WIDTH, y, fill=GRID_COLOR, tag="grid")
-
-
+# Update the Snake's Position, Check for Collisions, and Check for Food Eaten
 def next_turn(snake, food):
     x, y = snake.coordinates[0]
 
@@ -122,10 +146,12 @@ def next_turn(snake, food):
     elif direction == "right":
         x += SPACE_SIZE
 
+    # Update the Snake's Position
     snake.coordinates.insert(0, (x, y))
     new_head = canvas.create_oval(x, y, x + SPACE_SIZE, y + SPACE_SIZE, fill=HEAD_COLOR, tag="snake")
     snake.shapes.insert(0, new_head)
 
+    # Check if the Snake Eats the Food
     if x == food.coordinates[0] and y == food.coordinates[1]:
         global score
         snake_food.play()
@@ -138,6 +164,7 @@ def next_turn(snake, food):
         canvas.delete(snake.shapes[-1])
         del snake.shapes[-1]
 
+    # Update the Snake's Body Parts
     if len(snake.shapes) > 1:
         previous_head = snake.shapes[1]
         px, py = snake.coordinates[1]
@@ -145,6 +172,7 @@ def next_turn(snake, food):
         body_part = canvas.create_rectangle(px, py, px + SPACE_SIZE, py + SPACE_SIZE, fill=BODY_COLOR, tag="snake")
         snake.shapes[1] = body_part
 
+    # Check for Collisions
     if check_collisions(snake):
         snake_game_over_song.play(loops=-1)
         game_over()
@@ -152,6 +180,7 @@ def next_turn(snake, food):
         window.after(SPEED, next_turn, snake, food)
 
 
+# Change the Snake's Direction
 def change_direction(new_direction):
     global direction
 
@@ -169,6 +198,8 @@ def change_direction(new_direction):
             direction = new_direction
 
 
+# Check for Collisions with the Wall or the Snake's Body
+# Improved by ChatGPT
 def check_collisions(snake):
     global collision
     x, y = snake.coordinates[0]
@@ -194,6 +225,15 @@ def check_collisions(snake):
     return False
 
 
+# Add Game Data to the Leaderboard CSV File
+# Reference:
+# [11] https://www.w3schools.com/python/pandas/pandas_dataframes.asp
+# [12] https://www.w3schools.com/python/pandas/pandas_csv.asp
+# [13] https://stackoverflow.com/questions/21738566/how-to-set-a-variable-to-be-todays-date-in-python-pandas
+# [14] https://www.geeksforgeeks.org/how-to-append-pandas-dataframe-to-existing-csv-file/.
+# [15] https://www.geeksforgeeks.org/pandas-dataframe-rank/
+# [16] https://stackoverflow.com/questions/39357882/pandas-dense-rank.
+# [19] https://www.geeksforgeeks.org/how-to-set-the-default-text-of-tkinter-entry-widget/
 def add_data():
     global score, collision, start
     end = time.time()
@@ -226,25 +266,33 @@ def add_data():
     df_rank.to_csv('game_data_csv/leaderboard_dense_rank.csv', index=False)
 
 
+# Game Over Screen
+# Reference:
+# [9] https://www.w3schools.com/python/numpy/numpy_intro.asp
+# [10] https://www.w3schools.com/python/numpy/numpy_creating_arrays.asp
 def game_over():
-    canvas.delete("snake", "food", "grid")
+    canvas.delete("all")
     add_data()
 
+    game_over_image_path = "images/pixel_sssnack_game_over_image.png"
+    game_over_background_image = PhotoImage(file=game_over_image_path)
+
+    canvas.create_image(GAME_WIDTH / 2, GAME_HEIGHT / 2, image=game_over_background_image, anchor=CENTER,
+                        tag="gameover_bg")
+
+    canvas.image = game_over_background_image
+
+    # Display High Score
     df_file = pd.DataFrame(pd.read_csv('game_data_csv/leaderboard.csv'))
     score_array = df_file['Score'].values
     high_score = np.max(score_array)
-    print(f"Score: {score_array}")
-    print(f"High Score: {high_score}")
 
-    canvas.create_text(canvas.winfo_width() / 2, canvas.winfo_height() / 2,
-                       font=('Fixedsys', 70), text="GAME OVER", fill="red", tag="gameover")
-    canvas.create_text(300, 375,
-                       font=('Fixedsys', 20), text=f"HIGH SCORE: {high_score}", fill="red", tag="gameover")
+    canvas.create_text(300, 300,
+                       font=('Fixedsys', 20), text=f"HIGH SCORE: {high_score}", fill="#FE502D", tag="gameover")
 
+    # Display Bar Chart of Player Scores
     data = pd.read_csv('game_data_csv/leaderboard.csv')
-
     player_scores = data.groupby('Player Name')['Score'].sum().sort_values(ascending=False)
-
     plt.figure(figsize=(12, 6))
     player_scores.plot(kind='bar', color='skyblue')
     plt.title('Player Scores', fontsize=16)
@@ -276,6 +324,7 @@ menu_frame.pack()
 menu_background_label = Label(menu_frame, image=menu_background_image)
 menu_background_label.place(relwidth=1, relheight=1)
 
+# Player Name Entry
 player_name_entry = Entry(menu_frame, font=("Fixedsys", 24), width=20, bg="#333333", fg="white")
 player_name_entry.insert(0, "Enter Player Name")
 player_name_entry.place(relx=0.5, rely=0.50, anchor=CENTER)
@@ -292,6 +341,8 @@ quit_button = Button(menu_frame, text="Quit", font=("Fixedsys", 24), command=gam
                      fg="white")
 quit_button.place(relx=0.5, rely=0.80, anchor=CENTER)
 
+# Reference:
+# [20] https://www.tutorialspoint.com/how-can-i-play-a-sound-when-a-tkinter-button-is-pushed
 pygame.mixer.init()
 snake_song = pygame.mixer.Sound("sounds/snake_song.mp3")
 snake_game_over = pygame.mixer.Sound("sounds/snake_game_over_sfx.mp3")
@@ -310,8 +361,11 @@ screen_height = window.winfo_screenheight()
 x = int((screen_width / 2) - (window_width / 2))
 y = int((screen_height / 2) - (window_height / 2))
 
+# Reference:
+# [6] https://www.geeksforgeeks.org/python-geometry-method-in-tkinter/
 window.geometry(f"{window_width}x{window_height}+{x}+{y}")
 
+# Key Bindings for Movement
 window.bind('<Left>', lambda event: change_direction('left'))
 window.bind('<Right>', lambda event: change_direction('right'))
 window.bind('<Up>', lambda event: change_direction('up'))
